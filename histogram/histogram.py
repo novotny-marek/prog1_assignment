@@ -49,4 +49,4 @@ class ImageHistogram(ImageReader):
 # ImageReader('sample_image.jpg').show_image()
 # ImageHistogram('sample_image.jpg').show_image()
 
-ImageHistogram('sample_image.jpg').get_histogram()
+ImageHistogram('./histogram/sample_image.jpg').get_histogram()
