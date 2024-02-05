@@ -53,39 +53,54 @@ class ImageReader:
         plt.show()
 ```
 
-Třída `ImageHistogram` podle zásad OOP dědí funkce třídy `ImageReader` a
-vytváří histogram pro daný obrázek, který následně zobrazí.
+Definujeme třídu `ImageHistogram` podle zásad OOP dědí funkce třídy
+`ImageReader`.
 ```py
 # Define a class to create and display a histogram of an image
 class ImageHistogram(ImageReader):
     def __init__(self, path):
         # Call the __init__ method of the parent class
         ImageReader.__init__(self, path)
+```
 
-    # Define a method to display the histogram of the image
-    def get_histogram(self):
-        # Create a new figure and set the x-axis limits
-        plt.figure()
-        plt.xlim([0, 256])
+Definujeme metodu `get_histogram`, která bude vytvářet a zobrazovat histogram
+zvoleného obrázku.
 
-        # Create a histogram for each color channel
-        colors = ('r', 'g', 'b')
-        # Loop over each color channel
-        for i, color in enumerate(colors):
-            # Calculate the histogram for the current color channel
-            histogram, bin_edges = np.histogram(
-                self.image[:, :, i], bins=256, range=(0, 256)
-            )
-            # Plot the histogram for the current color channel
-            plt.plot(bin_edges[0:-1], histogram, color=color)
+Pomocí knihovny `Matplotlib` vytvoříme graf s ohraničený na ose X od 0 do 256.
+Zároveň definujeme seznam tří barev spektra pro iteraci. 
+```py
+# Define a method to display the histogram of the image
+def get_histogram(self):
+    # Create a new figure and set the x-axis limits
+    plt.figure()
+    plt.xlim([0, 256])
 
-        # Add a title and labels to the plot
-        plt.title('Color Histogram')
-        plt.xlabel('Color Value')
-        plt.ylabel('Pixel Count')
+    # Create a histogram for each color channel
+    colors = ('r', 'g', 'b')
+```
 
-        # Display the histogram
-        plt.show()
+`For` cyklus procházející jednotlivými barvami spektra vytvoří pro každou barvu
+samostatnou křivku, kterou následně zakreslí do předem definovaného grafu.
+```py    
+# Loop over each color channel
+for i, color in enumerate(colors):
+    # Calculate the histogram for the current color channel
+    histogram, bin_edges = np.histogram(
+        self.image[:, :, i], bins=256, range=(0, 256)
+    )
+        # Plot the histogram for the current color channel
+        plt.plot(bin_edges[0:-1], histogram, color=color)
+```
+
+Doplnění grafu o název a popis hlavních os a následné zobrazení grafu.
+```py
+# Add a title and labels to the plot
+plt.title('Color Histogram')
+plt.xlabel('Color Value')
+plt.ylabel('Pixel Count')
+
+# Display the histogram
+plt.show()
 ```
 
 ### Datové struktury
