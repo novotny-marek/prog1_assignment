@@ -89,6 +89,16 @@ class MatrixOperations(Matrix):
         for row in result:
             print(row)
 
+        choice = input("Do you want to save the result matrix? (y/n): ")
+        if choice.lower() == "y":
+            self.savematrix(result)
+
+    def savematrix(self, matrix):
+        with open('./matrix/result.txt', "w") as file:
+            for row in matrix:
+                file.write(" ".join(str(num) for num in row) + "\n")
+        print("Matrix saved successfully")
+
 # debugging
 mo = MatrixOperations()
 mo.printmatrix(mo.m1, mo.m2)
