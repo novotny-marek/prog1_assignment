@@ -3,20 +3,40 @@ class Matrix:
     def __init__(self):
         self.m1 = self.getmatrix("first")
         self.m2 = self.getmatrix("second")
-
+    # ask the user if they want to read the matrix from a file or input
     def getmatrix(self, name):
-        # ask the user for the number of rows and columns
+        choice = input(f"Do you want to read the {name} matrix from a file? (y/n): ")
+        if choice.lower() == "y":
+            filename = input(f"Enter the filename for the {name} matrix: ")
+            matrix = self.readmatrixfromfile(filename)
+        else:
+            matrix = self.readmatrixfrominput(name)
+
+        return matrix
+    # read the matrix from a file
+    def readmatrixfromfile(self, filename):
+        matrix = []
+        try:
+            with open(filename, "r") as file:
+                for line in file:
+                    row = [int(num) for num in line.strip().split()]
+                    matrix.append(row)
+        except FileNotFoundError:
+            print(f"File '{filename}' not found. Please try again.")
+            matrix = self.readmatrixfromfile(filename)
+
+        return matrix
+    # read the matrix from input
+    def readmatrixfrominput(self, name):
         rows = int(input(f"Number of rows of the {name} matrix: "))
         columns = int(input(f"Number of columns of the {name} matrix: "))
 
-        # create an empty matrix
         matrix = []
-
-        # iterate through the rows of the matrix and ask the user for the elements
         for i in range(rows):
             row = []
             for j in range(columns):
-                row.append(int(input(f"Element at position ({i + 1}, {j + 1} of the {name} matrix: ")))
+                element = int(input(f"Element at position ({i + 1}, {j + 1}) of the {name} matrix: "))
+                row.append(element)
             matrix.append(row)
 
         return matrix
@@ -73,6 +93,3 @@ class MatrixOperations(Matrix):
 mo = MatrixOperations()
 mo.printmatrix(mo.m1, mo.m2)
 mo.multiply()
-
-
-
