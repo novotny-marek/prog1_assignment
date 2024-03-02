@@ -1,3 +1,4 @@
+# Import necessary libraries
 from PIL import Image
 import matplotlib.pyplot as plt
 
@@ -42,9 +43,6 @@ class Histogram():
                 self.pixel_values.append(row)
                 # Skip any padding bytes
                 f.read(width % 4)
-    # Define a method to get the pixel values
-    def get_pixels(self):
-        return self.pixel_values
     # Define a method to plot the histogram
     def plot(self):
         # Separate the pixel data into three lists, one for each color channel
@@ -69,5 +67,4 @@ i = Picture('./histogram/sample_image.jpg')
 i.convert_to_bmp()
 h = Histogram()
 h.read_bmp()
-pixels = h.get_pixels()
 h.plot()

@@ -20,94 +20,119 @@ metody patří třeba [Bucket sort][2].
 
 ## Zvolený algoritmus
 
-Tento kód používá knihovnu [NumPy][3] pro vytvoření histogramu a
-[Matplotlib][4] pro jeho zobrazení. Pro každý kanál se vytvoří histogram pomocí
-pomocí funkce `histogram` z knihovny NumPy. Funkce `histogram` právě využívá
-algoritmu *first-fit bin packing*. Poté se histogram zobrazí pomocí funkce
-`plot`z knihovny matplotlib.
+Tento kód používá knihovnu [Pillow][3] na převod rastru do bitmapy pro
+jednodušší práci s výpočtem. Tento kód využívá právě algoritmu first-fit bin
+packing. Knihovna [Matplotlib][4] je poté využita na samotné vykreslení grafu.
 
 ## Struktura programu
 
 Nejdříve na začátku kódu importujeme používané knihovny.
 ```py
 # Import necessary libraries
-import imageio.v3 as iio
-import numpy as np
+from PIL import Image
 import matplotlib.pyplot as plt
 ```
 
 Poté je kód strukturován v rámci zásad objektově orientovaného programování
-(OOP) do dvou tříd `ImageReader` a `ImageHistogram`.
+(OOP) do dvou tříd `Picture` a `Histogram`.
 
-Třída `ImageReader` slouží k načtení obrázku do Numpy pole a pro zobrazení načteného obrázku.
+Třída `Picture` slouží k otevření obrázku a jeho převod na bitmapu.
 ```py
-# Define a class to read and display an image
-class ImageReader:
+# Define class Picture that reads an image and converts it to a BMP file
+class Picture:
     # Define the __init__ method to read the image
-    def __init__(self, path):
-        self.image = iio.imread(path)
-    
-    # Define a method to display the image
-    def show_image(self):
-        plt.imshow(self.image)
-        plt.show()
+    def __init__(self, image_path):
+        self.image = Image.open(image_path)
+    # Define a method to convert the image to a BMP file
+    def convert_to_bmp(self):
+        rgb_img = self.image.convert('RGB')
+        rgb_img.save('./histogram/image.bmp')
 ```
 
-Definujeme třídu `ImageHistogram` podle zásad OOP dědí funkce třídy
-`ImageReader`.
+Definujeme třídu `Histogram`, která přečte bitmapový obrázek a připraví prázdný
+list na samotné hodnoty pixelů.
 ```py
-# Define a class to create and display a histogram of an image
-class ImageHistogram(ImageReader):
-    def __init__(self, path):
-        # Call the __init__ method of the parent class
-        ImageReader.__init__(self, path)
+class Histogram():
+    def __init__(self):
+        self.filename = './histogram/image.bmp'
+        self.pixel_values = []
 ```
 
-Definujeme metodu `get_histogram`, která bude vytvářet a zobrazovat histogram
-zvoleného obrázku.
 
-Pomocí knihovny `Matplotlib` vytvoříme graf s ohraničený na ose X od 0 do 256.
-Zároveň definujeme seznam tří barev spektra pro iteraci. 
+Definujeme metodu `read_bmp` na přečtení bitmapového obrázku.
 ```py
-# Define a method to display the histogram of the image
-def get_histogram(self):
-    # Create a new figure and set the x-axis limits
-    plt.figure()
-    plt.xlim([0, 256])
-
-    # Create a histogram for each color channel
-    colors = ('r', 'g', 'b')
+# Define a method to read the BMP file
+def read_bmp(self):
+    with open(self.filename, 'rb') as f:
 ```
 
-`For` cyklus procházející jednotlivými barvami spektra vytvoří pro každou barvu
-samostatnou křivku, kterou následně zakreslí do předem definovaného grafu.
-```py    
-# Loop over each color channel
-for i, color in enumerate(colors):
-    # Calculate the histogram for the current color channel
-    histogram, bin_edges = np.histogram(
-        self.image[:, :, i], bins=256, range=(0, 256)
-    )
-        # Plot the histogram for the current color channel
-        plt.plot(bin_edges[0:-1], histogram, color=color)
-```
-
-Doplnění grafu o název a popis hlavních os a následné zobrazení grafu.
+Pstupně čteme bajty bitmapového obrázku. Nejprve zahazujeme záhlaví a poté
+čteme záhlaví s informacemi o obrázku, ze kterých vyčteme šířku a výšku
+obrázku. Poté zahazujeme zbytek záhlaví.
 ```py
+f.read(14) # Skip bitmap file header
+bmp_header = f.read(40) # Read bitmap info header
+# Extract image width and height from the header
+width, height = (
+    int.from_bytes(bmp_header[4:8],
+        'little'),
+        int.from_bytes(bmp_header[8:12],
+        'little')
+        )
+    # Skip the rest of the header
+    f.read(18)
+```
+
+Čteme hodnoty pixelů řádek po řádku, pomocí informace o výšce a šířce obrázku.
+V bitmapovém obrázku jsou hodnoty RGB uloženy v pořadí GBR. Čteme tedy bajt po
+bajtu a tyto bajty převádíme na integery. Řádky poté ukládáme do 2D listu. Po
+každém řádku zahazujeme bajty, které oddělují hodnoty pixelů.
+```py
+# Read the pixel values row by row
+for _ in range(height):
+    row = []
+    for _ in range(width):
+        # Read the pixel values
+        b = int.from_bytes(f.read(1), 'little')
+        g = int.from_bytes(f.read(1), 'little')
+        r = int.from_bytes(f.read(1), 'little')
+        row.append((r, g, b))
+    self.pixel_values.append(row)
+    # Skip any padding bytes
+    f.read(width % 4)
+```
+
+Definujeme metodu `plot` na vykreslení grafu. Nejprve z 2D listu `pixel_values`
+vytřídíme jednotlivé barvy. 
+```py
+# Define a method to plot the histogram
+def plot(self):
+    # Separate the pixel data into three lists, one for each color channel
+    red_values = [pixel[0] for row in self.pixel_values for pixel in row]
+    green_values = [pixel[1] for row in self.pixel_values for pixel in row]
+    blue_values = [pixel[2] for row in self.pixel_values for pixel in row]
+```
+
+Poté listy s informacemi o hodnotách barev vykreslíme pomocí `Matplolib`.
+```py
+# Plot a histogram for each color channel
+plt.hist(red_values, bins=256, color='red', alpha=0.5)
+plt.hist(green_values, bins=256, color='green', alpha=0.5)
+plt.hist(blue_values, bins=256, color='blue', alpha=0.5)
+
 # Add a title and labels to the plot
 plt.title('Color Histogram')
 plt.xlabel('Color Value')
 plt.ylabel('Pixel Count')
 
-# Display the histogram
 plt.show()
 ```
 
 ### Datové struktury
 
-Hlavní datovou strukturou je NumPy pole (array), které reprezentuje obrázek.
+Hlavní datovou strukturou je 2D list, který reprezentuje hodnoty pixelů.
 Každý pixel je reprezentován trojicí hodnot (R, G, B). Další datovou
-strukturou je seznam (list) využitý na uložení těchto tří barev.
+strukturou je list využitý na uložení těchto tří barev samostatně.
 
 ### Vstupní/výstupní data
 
@@ -116,17 +141,17 @@ zobrazený pomocí Matplotlib.
 
 ## Problematická místa kódu
 
-Jedním z problematických míst kódu je, že kód je pevně nastaven na zpracování
-obrázků se třemi kanály barev. To znamená, že nebude fungovat správně pro
-černobílé obrázky nebo obrázky s alfa kanálem.
+Kód používá pevně zadané cesty k obrázkům, to zhoršuje jeho flexibilitu.
+Zároveň kód neefektivně využívá paměť při čtení obrázku. Je to poznat při
+spouštění kódu a může to teoreticky způsobit problém při využití na větší
+obrázky.
 
 ## Možná vylepšení
 
-Kód by mohl být rozšířen tak, aby automaticky detekoval počet kanálů barev
-obrázku a správně zpracoval obrázky s různým počtem kanálů. Také by mohl být
-rozšířen o možnost nastavení počtu binů v histogramu.
+Kód by mohl být opatřen dotazováním uživatele na cestu k obrázku a algoritmus
+by mohl být upraven pro efektivnější využití paměti.
 
 [1]: <https://en.wikipedia.org/wiki/First-fit_bin_packing>
 [2]: <https://en.wikipedia.org/wiki/Bucket_sort>
-[3]: <https://matplotlib.org/>
-[4]: <https://numpy.org/>
+[3]: <https://pillow.readthedocs.io/>
+[4]: <https://matplotlib.org/>
