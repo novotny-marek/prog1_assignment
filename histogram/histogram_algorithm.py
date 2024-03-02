@@ -55,6 +55,12 @@ class Histogram():
         plt.hist(red_values, bins=256, color='red', alpha=0.5)
         plt.hist(green_values, bins=256, color='green', alpha=0.5)
         plt.hist(blue_values, bins=256, color='blue', alpha=0.5)
+
+        # Add a title and labels to the plot
+        plt.title('Color Histogram')
+        plt.xlabel('Color Value')
+        plt.ylabel('Pixel Count')
+
         plt.show()
 
         
